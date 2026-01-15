@@ -58,8 +58,11 @@ secrets.json
 # .NET build artifacts
 bin/
 obj/
+**/bin/
+**/obj/
 
 # SQLite local dev
 *.db
 *.db-shm
 *.db-wal
+

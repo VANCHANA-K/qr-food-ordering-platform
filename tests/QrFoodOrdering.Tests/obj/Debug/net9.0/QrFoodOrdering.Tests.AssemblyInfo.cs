@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("QrFoodOrdering.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+468f46314f96d7cf198c3ae7beb8bbcd2666f45d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+94e29c79ff821e5f85ae3b2bbb9b97c239fdc3c8")]
 [assembly: System.Reflection.AssemblyProductAttribute("QrFoodOrdering.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("QrFoodOrdering.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

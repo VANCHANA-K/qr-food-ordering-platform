@@ -6,7 +6,7 @@
 
 ## Clone & Run
 ```bash
-git clone <repo-url>
+git clone https://github.com/VANCHANA-K/qr-food-ordering-platform.git
 cd qr-food-ordering-platform
 dotnet build QrFoodOrdering.sln
 dotnet test QrFoodOrdering.sln

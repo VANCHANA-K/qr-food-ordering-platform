@@ -1,6 +1,6 @@
 using System.Net;
-using System.Text.Json;
-using QrFoodOrdering.Api.Models;
+using QrFoodOrdering.Api.Contracts.Common;
+using QrFoodOrdering.Domain.Common;
 
 namespace QrFoodOrdering.Api.Middleware;
 
@@ -17,31 +17,63 @@ public sealed class ExceptionHandlingMiddleware
         _logger = logger;
     }
 
-    public async Task Invoke(HttpContext context)
+    public async Task InvokeAsync(HttpContext context)
     {
         try
         {
             await _next(context);
         }
+        catch (DomainException ex)
+        {
+            await WriteErrorAsync(
+                context,
+                HttpStatusCode.Conflict,
+                "DOMAIN_RULE_VIOLATION",
+                ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            await WriteErrorAsync(
+                context,
+                HttpStatusCode.BadRequest,
+                "INVALID_ARGUMENT",
+                ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            await WriteErrorAsync(
+                context,
+                HttpStatusCode.NotFound,
+                "RESOURCE_NOT_FOUND",
+                ex.Message);
+        }
         catch (Exception ex)
         {
-            var traceId = context.TraceIdentifier;
+            _logger.LogError(ex, "Unhandled exception");
 
-            _logger.LogError(ex, "Unhandled exception. TraceId={TraceId}", traceId);
-
-            var response = new ApiErrorResponse
-            {
-                Code = "INTERNAL_ERROR",
-                Message = "An unexpected error occurred.",
-                TraceId = traceId
-            };
-
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            await context.Response.WriteAsync(
-                JsonSerializer.Serialize(response)
-            );
+            await WriteErrorAsync(
+                context,
+                HttpStatusCode.InternalServerError,
+                "INTERNAL_ERROR",
+                "An unexpected error occurred.");
         }
+    }
+
+    private static async Task WriteErrorAsync(
+        HttpContext context,
+        HttpStatusCode statusCode,
+        string code,
+        string message)
+    {
+        var traceId = context.Items["X-Trace-Id"]?.ToString()
+                      ?? context.TraceIdentifier;
+
+        var response = new ApiErrorResponse(
+            new ApiError(code, message, traceId));
+
+        context.Response.StatusCode = (int)statusCode;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsJsonAsync(response);
     }
 }

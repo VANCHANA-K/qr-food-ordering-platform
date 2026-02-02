@@ -1,57 +1,70 @@
+using Microsoft.AspNetCore.Mvc;
+using QrFoodOrdering.Api.Contracts.Common;
 using QrFoodOrdering.Api.Middleware;
 using QrFoodOrdering.Application;
 using QrFoodOrdering.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//
+// Controllers
+//
 builder.Services.AddControllers();
 
+//
+// ✅ Override ApiController validation response (400)
+//
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var traceId = context.HttpContext.Response.Headers["X-Trace-Id"].ToString();
+        if (string.IsNullOrWhiteSpace(traceId))
+            traceId = context.HttpContext.TraceIdentifier;
 
-// 🔒 Swagger is intentionally disabled for Sprint 0
-// Reason:
-// - Not required for API contract locking
-// - Avoid tooling noise during foundation sprint
-// builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSwaggerGen();
+        var firstError = context.ModelState
+            .SelectMany(kvp => kvp.Value!.Errors)
+            .Select(e => e.ErrorMessage)
+            .FirstOrDefault();
 
-// Application layer (use-case level)
+        var message = string.IsNullOrWhiteSpace(firstError)
+            ? "Invalid request."
+            : firstError;
 
-// builder.Services.AddScoped<CreateOrder>();
+        var body = new ApiErrorResponse(
+            new ApiError(
+                "INVALID_ARGUMENT",
+                message,
+                traceId
+            )
+        );
+
+        return new BadRequestObjectResult(body);
+    };
+});
+
+//
+// Application & Infrastructure DI
+//
 builder.Services.AddApplication();
-
-// Infrastructure layer (DbContext, persistence)
-
-
-// builder.Services.AddInfrastructure(
-//     builder.Configuration.GetConnectionString("Default")!
-// );
-
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
 //
-// Middleware pipeline
+// Middleware pipeline (ลำดับสำคัญมาก)
 //
 
-// ❗ Global exception handler — MUST be first
-// Purpose:
-// - Catch all unhandled exceptions
-// - Prevent stack trace leakage
-// - Standardize error response
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-// TraceId MUST be before anything else that logs
+// 1️⃣ TraceId — ต้องมาก่อนสุด
 app.UseMiddleware<TraceIdMiddleware>();
 
-// 🔐 JWT middleware stub (position locked, no auth logic yet)
-// Purpose:
-// - Define pipeline position only
-// - Actual JWT validation will be added in later sprint
+// 2️⃣ Global exception handler
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// 3️⃣ JWT stub (ยังไม่ validate จริง)
 app.UseMiddleware<JwtStubMiddleware>();
 
-// Routing to controllers
+// Routing
 app.MapControllers();
 
-// Application entry point
 app.Run();

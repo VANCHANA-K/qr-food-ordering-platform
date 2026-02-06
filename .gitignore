@@ -68,3 +68,4 @@ obj/
 *.db-wal
 
 **/data/audit/*.log
+*.log

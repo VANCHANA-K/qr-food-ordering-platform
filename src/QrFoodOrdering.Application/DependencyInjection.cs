@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
+using QrFoodOrdering.Application.Common.Observability;
+using QrFoodOrdering.Application.Common.Resilience;
 using QrFoodOrdering.Application.Orders.AddItem;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Application.Orders.CreateOrder;
 using QrFoodOrdering.Application.Orders.GetOrder;
-using QrFoodOrdering.Application.Common.Observability;
-using QrFoodOrdering.Application.Common.Resilience;
 
 namespace QrFoodOrdering.Application;
 

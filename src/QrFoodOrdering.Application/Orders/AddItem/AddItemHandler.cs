@@ -21,7 +21,8 @@ public sealed class AddItemHandler
         IIdempotencyStore idempotency,
         IRetryPolicy retry,
         ITraceContext trace,
-        ILogger<AddItemHandler> logger)
+        ILogger<AddItemHandler> logger
+    )
     {
         _repo = repo;
         _idempotency = idempotency;
@@ -46,26 +47,32 @@ public sealed class AddItemHandler
 
         var traceId = _trace.TraceId;
 
-        _logger.LogInformation("AddItemStarted {@data}", new
-        {
-            TraceId = traceId,
-            OrderId = command.OrderId,
-            Action = "ADD_ITEM"
-        });
+        _logger.LogInformation(
+            "AddItemStarted {@data}",
+            new
+            {
+                TraceId = traceId,
+                OrderId = command.OrderId,
+                Action = "ADD_ITEM",
+            }
+        );
 
         // 2) Idempotency
         var hasKey = !string.IsNullOrWhiteSpace(command.IdempotencyKey);
         if (!hasKey)
         {
             await ExecuteOnce(command, ct);
-            _logger.LogInformation("AddItemSucceeded {@data}", new
-            {
-                TraceId = traceId,
-                OrderId = command.OrderId,
-                Action = "ADD_ITEM",
-                Status = "SUCCESS",
-                Note = "No idempotency key provided"
-            });
+            _logger.LogInformation(
+                "AddItemSucceeded {@data}",
+                new
+                {
+                    TraceId = traceId,
+                    OrderId = command.OrderId,
+                    Action = "ADD_ITEM",
+                    Status = "SUCCESS",
+                    Note = "No idempotency key provided",
+                }
+            );
             return;
         }
 
@@ -74,44 +81,57 @@ public sealed class AddItemHandler
         var existing = await _idempotency.TryGetAsync(key, ct);
         if (existing.Found)
         {
-            _logger.LogInformation("AddItemIdempotentHit {@data}", new
-            {
-                TraceId = traceId,
-                OrderId = command.OrderId,
-                Action = "ADD_ITEM",
-                IdempotencyKey = command.IdempotencyKey
-            });
+            _logger.LogInformation(
+                "AddItemIdempotentHit {@data}",
+                new
+                {
+                    TraceId = traceId,
+                    OrderId = command.OrderId,
+                    Action = "ADD_ITEM",
+                    IdempotencyKey = command.IdempotencyKey,
+                }
+            );
             return;
         }
 
         try
         {
             // 4) Safe retry only when idempotent
-            await _retry.ExecuteAsync(async token =>
-            {
-                await ExecuteOnce(command, token);
-            }, ct);
+            await _retry.ExecuteAsync(
+                async token =>
+                {
+                    await ExecuteOnce(command, token);
+                },
+                ct
+            );
 
             // 5) Mark idempotent after success only
             await _idempotency.MarkAsync(key, command.OrderId, ct);
 
-            _logger.LogInformation("AddItemSucceeded {@data}", new
-            {
-                TraceId = traceId,
-                OrderId = command.OrderId,
-                Action = "ADD_ITEM",
-                Status = "SUCCESS"
-            });
+            _logger.LogInformation(
+                "AddItemSucceeded {@data}",
+                new
+                {
+                    TraceId = traceId,
+                    OrderId = command.OrderId,
+                    Action = "ADD_ITEM",
+                    Status = "SUCCESS",
+                }
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "AddItemFailed {@data}", new
-            {
-                TraceId = traceId,
-                OrderId = command.OrderId,
-                Action = "ADD_ITEM",
-                Status = "FAILED"
-            });
+            _logger.LogError(
+                ex,
+                "AddItemFailed {@data}",
+                new
+                {
+                    TraceId = traceId,
+                    OrderId = command.OrderId,
+                    Action = "ADD_ITEM",
+                    Status = "FAILED",
+                }
+            );
             throw;
         }
     }
@@ -120,14 +140,16 @@ public sealed class AddItemHandler
     {
         ct.ThrowIfCancellationRequested();
 
-        var order = await _repo.GetByIdAsync(command.OrderId, ct)
+        var order =
+            await _repo.GetByIdAsync(command.OrderId, ct)
             ?? throw new NotFoundException("Order not found");
 
         var item = new OrderItem(
             Guid.NewGuid(),
             command.ProductName.Trim(),
             command.Quantity,
-            new Money(command.UnitPrice, "THB"));
+            new Money(command.UnitPrice, "THB")
+        );
 
         order.AddItem(item);
 

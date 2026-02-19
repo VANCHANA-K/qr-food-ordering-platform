@@ -6,6 +6,7 @@ using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Application.Orders.CreateOrder;
 using QrFoodOrdering.Application.Orders.GetOrder;
 using QrFoodOrdering.Application.Tables.Create;
+using QrFoodOrdering.Application.Tables.GetAll;
 using QrFoodOrdering.Application.Tables.UpdateStatus;
 
 namespace QrFoodOrdering.Application;
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<GetOrderHandler>();
         services.AddScoped<CloseOrderHandler>();
         services.AddScoped<CreateTableHandler>();
+        services.AddScoped<GetAllTablesHandler>();
         services.AddScoped<UpdateTableStatusHandler>();
 
         // Observability: Trace context (scoped per request)

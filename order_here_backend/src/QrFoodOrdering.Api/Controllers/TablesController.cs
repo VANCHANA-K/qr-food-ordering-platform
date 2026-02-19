@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QrFoodOrdering.Api.Contracts.Tables;
 using QrFoodOrdering.Application.Tables.Create;
+using QrFoodOrdering.Application.Tables.GetAll;
 using QrFoodOrdering.Application.Tables.UpdateStatus;
 
 namespace QrFoodOrdering.Api.Controllers;
@@ -9,6 +10,15 @@ namespace QrFoodOrdering.Api.Controllers;
 [Route("tables")]
 public sealed class TablesController : ControllerBase
 {
+    [HttpGet]
+    public async Task<ActionResult<List<GetAllTablesResult>>> GetAll(
+        [FromServices] GetAllTablesHandler handler,
+        CancellationToken ct)
+    {
+        var result = await handler.Handle(ct);
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateTableRequest request,

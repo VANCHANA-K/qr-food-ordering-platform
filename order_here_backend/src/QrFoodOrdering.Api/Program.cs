@@ -17,6 +17,21 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// CORS (Frontend Dev)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "FrontendDev",
+        policy =>
+        {
+            policy
+                .WithOrigins("http://localhost:3000") // Next.js dev server
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    );
+});
+
 // Validation: unify 400 response shape
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -50,7 +65,10 @@ builder.Services.AddScoped<ITraceContext, TraceContext>();
 
 var app = builder.Build();
 
-// Middleware
+// ----------------------
+// Middleware Pipeline
+// ----------------------
+
 // 1) TraceId (first)
 app.UseMiddleware<TraceIdMiddleware>();
 
@@ -60,7 +78,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 // 3) JWT stub (placeholder)
 app.UseMiddleware<JwtStubMiddleware>();
 
-// 4) Ensure 404 from unmatched routes returns JSON error
+// 4) CORS (must be before MapControllers)
+app.UseCors("FrontendDev");
+
+// 5) Ensure 404 from unmatched routes returns JSON error
 app.Use(
     async (context, next) =>
     {
@@ -69,7 +90,6 @@ app.Use(
         if (context.Response.HasStarted)
             return;
 
-        // If no endpoint matched and it's a 404, return our error envelope
         if (
             context.GetEndpoint() is null
             && context.Response.StatusCode == StatusCodes.Status404NotFound

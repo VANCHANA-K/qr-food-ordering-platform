@@ -13,7 +13,7 @@ A production-grade QR Code Food Ordering Backend built with:
 # 🏗 Repository Structure
 
 ```
-order_here_99/
+order_here/
 ├── order_here_backend/
 │   ├── QrFoodOrdering.sln
 │   ├── src/
@@ -47,7 +47,7 @@ dotnet --version
 
 ```bash
 git clone https://github.com/VANCHANA-K/order_here_99.git
-cd order_here_99/order_here_backend
+cd order_here/order_here_backend
 ```
 
 ---

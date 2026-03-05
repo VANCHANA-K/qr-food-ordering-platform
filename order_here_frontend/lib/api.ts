@@ -1,12 +1,8 @@
 import type { TableDto } from "@/types/table";
+import type { ApiErrorResponse, QrResolveResponse } from "@/types/qr";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5132";
-
-export type ApiErrorResponse = {
-  errorCode: string;
-  message: string;
-  traceId: string;
-};
+const API_BASE = "http://localhost:5132";
 
 export type GenerateQrResponse = {
   tableId: string;
@@ -92,4 +88,19 @@ export async function generateTableQr(tableId: string): Promise<GenerateQrRespon
   }
 
   return (await res.json()) as GenerateQrResponse;
+}
+
+export async function resolveQr(token: string): Promise<QrResolveResponse> {
+  const res = await fetch(`${API_BASE}/api/v1/qr/${token}`, {
+    cache: "no-store",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = data as ApiErrorResponse;
+    throw error;
+  }
+
+  return data as QrResolveResponse;
 }

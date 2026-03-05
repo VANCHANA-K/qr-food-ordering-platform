@@ -24,17 +24,22 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
     private static Task HandleException(HttpContext ctx, Exception ex)
     {
         var traceId =
-            ctx.Response.Headers.TryGetValue("x-trace-id", out var headerTraceId) && !string.IsNullOrWhiteSpace(headerTraceId)
+            ctx.Response.Headers.TryGetValue("x-trace-id", out var headerTraceId)
+            && !string.IsNullOrWhiteSpace(headerTraceId)
                 ? headerTraceId.ToString()
                 : ctx.TraceIdentifier;
 
         (HttpStatusCode status, string errorCode, string message) = ex switch
         {
-            InvalidRequestException e => (HttpStatusCode.BadRequest, "VALIDATION_ERROR", e.Message),
-            ConflictException e       => (HttpStatusCode.Conflict, e.ErrorCode, e.Message),
-            NotFoundException e       => (HttpStatusCode.NotFound, "NOT_FOUND", e.Message),
+            InvalidRequestException e => (MapInvalidRequestStatus(e.ErrorCode), e.ErrorCode, e.Message),
+            ConflictException e => (HttpStatusCode.Conflict, e.ErrorCode, e.Message),
+            NotFoundException e => (HttpStatusCode.NotFound, "NOT_FOUND", e.Message),
 
-            _ => (HttpStatusCode.InternalServerError, "UNEXPECTED_ERROR", "Unexpected error occurred."),
+            _ => (
+                HttpStatusCode.InternalServerError,
+                "UNEXPECTED_ERROR",
+                "Unexpected error occurred."
+            ),
         };
 
         var body = new ApiErrorResponse(errorCode, message, traceId);
@@ -43,5 +48,15 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         ctx.Response.StatusCode = (int)status;
 
         return ctx.Response.WriteAsync(JsonSerializer.Serialize(body, JsonOptions));
+    }
+
+    private static HttpStatusCode MapInvalidRequestStatus(string errorCode)
+    {
+        return errorCode switch
+        {
+            "QR_NOT_FOUND" => HttpStatusCode.NotFound,
+            "TABLE_NOT_FOUND" => HttpStatusCode.NotFound,
+            _ => HttpStatusCode.BadRequest,
+        };
     }
 }

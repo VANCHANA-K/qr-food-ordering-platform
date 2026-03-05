@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 // API Middleware
 using QrFoodOrdering.Api.Contracts.Common;
 using QrFoodOrdering.Api.Middleware;
@@ -6,8 +7,10 @@ using QrFoodOrdering.Api.Middleware;
 using QrFoodOrdering.Application;
 using QrFoodOrdering.Application.Common.Observability;
 using QrFoodOrdering.Application.Qr.Resolve;
+using QrFoodOrdering.Domain.Menu;
 // Infrastructure
 using QrFoodOrdering.Infrastructure;
+using QrFoodOrdering.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -118,5 +121,27 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.MapControllers();
+
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<QrFoodOrderingDbContext>();
+    await db.Database.MigrateAsync();
+
+    if (!await db.MenuItems.AnyAsync())
+    {
+        db.MenuItems.AddRange(
+            new MenuItem("M001", "Pad Thai", 60),
+            new MenuItem("M002", "Fried Rice", 55),
+            new MenuItem("M003", "Iced Tea", 25)
+        );
+
+        var unavailable = new MenuItem("M004", "Grilled Pork (Sold out)", 70);
+        unavailable.SetAvailability(false);
+        db.MenuItems.Add(unavailable);
+
+        await db.SaveChangesAsync();
+    }
+}
 
 app.Run();

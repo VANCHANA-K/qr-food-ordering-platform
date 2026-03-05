@@ -12,13 +12,35 @@ export default function StaffTablesPage() {
 
   async function load() {
     setLoading(true);
-    const data = await getTables();
-    setTables(data);
-    setLoading(false);
+    try {
+      const data = await getTables();
+      setTables(data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+
+    async function initialLoad() {
+      try {
+        const data = await getTables();
+        if (!cancelled) {
+          setTables(data);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    initialLoad();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

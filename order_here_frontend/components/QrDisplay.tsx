@@ -2,11 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
+import Image from "next/image";
 import { generateTableQr } from "@/lib/api";
 
 type Props = {
   tableId: string;
 };
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Failed to generate QR";
+}
 
 function normalizeQrUrl(rawQrUrl: string, token: string): string {
   if (typeof window === "undefined") return rawQrUrl;
@@ -55,8 +64,8 @@ export function QrDisplay({ tableId }: Props) {
         scale: 8,
       });
       setQrDataUrl(dataUrl);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to generate QR");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
       setToken(null);
       setQrUrl(null);
       setQrDataUrl(null);
@@ -112,7 +121,14 @@ export function QrDisplay({ tableId }: Props) {
             Table ID: <span className="font-mono">{tableId}</span>
           </div>
 
-          <img src={qrDataUrl} alt="QR Code" className="w-64 h-64" />
+          <Image
+            src={qrDataUrl}
+            alt="QR Code"
+            width={256}
+            height={256}
+            unoptimized
+            className="w-64 h-64"
+          />
 
           <div className="text-sm">
             <div className="text-gray-600">QR URL</div>

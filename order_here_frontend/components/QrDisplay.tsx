@@ -8,6 +8,24 @@ type Props = {
   tableId: string;
 };
 
+function normalizeQrUrl(rawQrUrl: string, token: string): string {
+  if (typeof window === "undefined") return rawQrUrl;
+
+  try {
+    const parsed = new URL(rawQrUrl);
+
+    // Dev backend currently returns https://localhost:3000.
+    // Use current app origin to avoid SSL protocol mismatch in local http setup.
+    if (parsed.hostname === "localhost") {
+      return `${window.location.origin}/order/${token}`;
+    }
+
+    return rawQrUrl;
+  } catch {
+    return `${window.location.origin}/order/${token}`;
+  }
+}
+
 export function QrDisplay({ tableId }: Props) {
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -26,11 +44,12 @@ export function QrDisplay({ tableId }: Props) {
     setLoading(true);
     try {
       const res = await generateTableQr(tableId);
+      const effectiveQrUrl = normalizeQrUrl(res.qrUrl, res.token);
       setToken(res.token);
-      setQrUrl(res.qrUrl);
+      setQrUrl(effectiveQrUrl);
       setGeneratedAtUtc(res.generatedAtUtc);
 
-      const dataUrl = await QRCode.toDataURL(res.qrUrl, {
+      const dataUrl = await QRCode.toDataURL(effectiveQrUrl, {
         errorCorrectionLevel: "M",
         margin: 2,
         scale: 8,

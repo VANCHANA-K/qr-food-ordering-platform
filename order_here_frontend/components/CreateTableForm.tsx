@@ -38,6 +38,7 @@ export function CreateTableForm({ onCreated }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
+      suppressHydrationWarning
       className="bg-white shadow rounded-lg p-4 mb-6 space-y-3"
     >
       <div className="font-semibold">Create New Table</div>
@@ -47,6 +48,7 @@ export function CreateTableForm({ onCreated }: Props) {
         placeholder="Enter table name"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        suppressHydrationWarning
         className="w-full border rounded px-3 py-2"
       />
 

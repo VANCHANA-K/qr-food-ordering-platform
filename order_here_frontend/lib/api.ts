@@ -2,7 +2,7 @@ import type { TableDto } from "@/types/table";
 import type { ApiErrorResponse, QrResolveResponse } from "@/types/qr";
 import type { MenuItemDto } from "@/types/menu";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5132";
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_PATH?.replace(/\/$/, "") ?? "";
 
 export type GenerateQrResponse = {
   tableId: string;

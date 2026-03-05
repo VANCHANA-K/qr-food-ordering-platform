@@ -9,16 +9,51 @@ import { CreateTableForm } from "@/components/CreateTableForm";
 export default function StaffTablesPage() {
   const [tables, setTables] = useState<TableDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
-    const data = await getTables();
-    setTables(data);
-    setLoading(false);
+    setError(null);
+    try {
+      const data = await getTables();
+      setTables(data);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to load tables.";
+      setError(message);
+      setTables([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+
+    async function initialLoad() {
+      setError(null);
+      try {
+        const data = await getTables();
+        if (!cancelled) {
+          setTables(data);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const message = e instanceof Error ? e.message : "Failed to load tables.";
+          setError(message);
+          setTables([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    initialLoad();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -27,6 +62,8 @@ export default function StaffTablesPage() {
 
       {/* 🔵 Create Form กลับมาแล้ว */}
       <CreateTableForm onCreated={load} />
+
+      {error && <div className="text-sm text-red-600">{error}</div>}
 
       {loading ? (
         <div>Loading...</div>

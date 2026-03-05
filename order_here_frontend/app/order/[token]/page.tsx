@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { resolveQr } from "@/lib/api";
-import type { QrResolveResponse, ApiErrorResponse } from "@/types/qr";
+import type { ApiErrorResponse } from "@/types/qr";
 import { saveTableSession } from "@/lib/session";
 
 export default function OrderEntryPage() {
@@ -12,7 +12,6 @@ export default function OrderEntryPage() {
   const params = useParams();
   const token = params.token as string;
 
-  const [data, setData] = useState<QrResolveResponse | null>(null);
   const [error, setError] = useState<ApiErrorResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,15 +43,5 @@ export default function OrderEntryPage() {
     return <div className="p-10 text-center text-red-500">{error.message}</div>;
   }
 
-  if (!data) {
-    return <div className="p-10 text-center">QR not found</div>;
-  }
-
-  return (
-    <div className="p-10 text-center">
-      <h1 className="text-2xl font-bold">Welcome</h1>
-
-      <p className="mt-4 text-lg">Table {data.tableCode}</p>
-    </div>
-  );
+  return <div className="p-10 text-center">Redirecting to menu...</div>;
 }

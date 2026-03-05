@@ -10,6 +10,14 @@ interface Props {
   refresh: () => Promise<void>;
 }
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Unexpected error";
+}
+
 export function TableList({ tables, refresh }: Props) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +34,8 @@ export function TableList({ tables, refresh }: Props) {
       }
 
       await refresh(); // ✅ sync with backend
-    } catch (err: any) {
-      setError(err?.message ?? "Unexpected error");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setLoadingId(null);
     }

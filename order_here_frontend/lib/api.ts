@@ -1,8 +1,8 @@
 import type { TableDto } from "@/types/table";
 import type { ApiErrorResponse, QrResolveResponse } from "@/types/qr";
+import type { MenuItemDto } from "@/types/menu";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5132";
-const API_BASE = "http://localhost:5132";
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_PATH?.replace(/\/$/, "") ?? "";
 
 export type GenerateQrResponse = {
   tableId: string;
@@ -91,7 +91,7 @@ export async function generateTableQr(tableId: string): Promise<GenerateQrRespon
 }
 
 export async function resolveQr(token: string): Promise<QrResolveResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/qr/${token}`, {
+  const res = await fetch(`${BASE_URL}/api/v1/qr/${token}`, {
     cache: "no-store",
   });
 
@@ -103,4 +103,18 @@ export async function resolveQr(token: string): Promise<QrResolveResponse> {
   }
 
   return data as QrResolveResponse;
+}
+
+export async function getMenuByTable(tableId: string): Promise<MenuItemDto[]> {
+  const res = await fetch(`${BASE_URL}/api/v1/tables/${tableId}/menu`, {
+    cache: "no-store",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw data;
+  }
+
+  return data as MenuItemDto[];
 }

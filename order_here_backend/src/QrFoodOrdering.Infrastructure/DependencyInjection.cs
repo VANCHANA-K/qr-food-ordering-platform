@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ITablesRepository, TablesRepository>();
         services.AddScoped<IQrRepository, QrRepository>();
+        services.AddScoped<IMenuRepository, MenuRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IIdempotencyStore, InMemoryIdempotencyStore>();
         services.AddSingleton<IAuditLogWriter, FileAuditLogWriter>();

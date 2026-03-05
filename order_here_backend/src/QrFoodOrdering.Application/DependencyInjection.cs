@@ -5,6 +5,7 @@ using QrFoodOrdering.Application.Orders.AddItem;
 using QrFoodOrdering.Application.Orders.CloseOrder;
 using QrFoodOrdering.Application.Orders.CreateOrder;
 using QrFoodOrdering.Application.Orders.GetOrder;
+using QrFoodOrdering.Application.Menu.GetByTable;
 using QrFoodOrdering.Application.Qr.Generate;
 using QrFoodOrdering.Application.Tables.Create;
 using QrFoodOrdering.Application.Tables.GetAll;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<GetAllTablesHandler>();
         services.AddScoped<UpdateTableStatusHandler>();
         services.AddScoped<GenerateQrHandler>();
+        services.AddScoped<GetMenuByTableHandler>();
 
         // Observability: Trace context (scoped per request)
         services.AddScoped<ITraceContext, TraceContext>();

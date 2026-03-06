@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Collections.Concurrent;
 using QrFoodOrdering.Application.Abstractions;
 using QrFoodOrdering.Application.Common.Audit;
 using QrFoodOrdering.Application.Common.Exceptions;
@@ -11,6 +12,8 @@ namespace QrFoodOrdering.Application.Orders.CreateOrderViaQr;
 
 public sealed class CreateOrderViaQrHandler
 {
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> IdempotencyLocks = new();
+
     private readonly IUnitOfWork _uow;
     private readonly ITablesRepository _tables;
     private readonly IMenuRepository _menu;
@@ -64,8 +67,32 @@ public sealed class CreateOrderViaQrHandler
                 );
         }
 
-        // 2.1) Optional idempotency
         var key = cmd.IdempotencyKey;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return await CreateOrderAsync(cmd, key, ct);
+        }
+
+        // Keep idempotency read/create/mark in one critical section per key.
+        var gate = IdempotencyLocks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(ct);
+        try
+        {
+            return await CreateOrderAsync(cmd, key, ct);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private async Task<CreateOrderViaQrResult> CreateOrderAsync(
+        CreateOrderViaQrCommand cmd,
+        string? key,
+        CancellationToken ct
+    )
+    {
+        // 3) Optional idempotency short-circuit
         if (!string.IsNullOrWhiteSpace(key))
         {
             var existing = await _idempotency.TryGetAsync(key, ct);
@@ -89,7 +116,7 @@ public sealed class CreateOrderViaQrHandler
             }
         }
 
-        // 3) Load menu items, validate active/available
+        // 4) Load menu items, validate active/available
         var menuItems = await _menu.GetByIdsAsync(cmd.Items.Select(x => x.MenuItemId).ToList(), ct);
 
         if (menuItems.Count != cmd.Items.Count)
@@ -110,7 +137,7 @@ public sealed class CreateOrderViaQrHandler
                 );
         }
 
-        // 4) Create Order
+        // 5) Create Order
         var order = new Order(Guid.NewGuid(), cmd.TableId, OrderStatus.Pending);
 
         foreach (var req in cmd.Items)

@@ -21,6 +21,9 @@ public sealed class OrdersController : ControllerBase
         CancellationToken ct
     )
     {
+        if (request.TableId == Guid.Empty)
+            throw new InvalidRequestException("TABLE_ID_REQUIRED", "TableId is required.");
+
         var result = await handler.Handle(
             new CreateOrderCommand(request.TableId, idempotencyKey),
             ct
